@@ -1,9 +1,12 @@
 import PhotoModel from '../models/photo.mjs';
+import AlbumModel from '../models/album.mjs';
+
 
 const Photos = class Photos {
   constructor(app, connect) {
     this.app = app;
     this.PhotoModel = connect.model('Photo', PhotoModel);
+    this.AlbumModel = connect.model('Album', AlbumModel);
 
     this.run();
   }
@@ -11,14 +14,27 @@ const Photos = class Photos {
   deleteById() {
     this.app.delete('/album/:idalbum/photo/:idphotos', (req, res) => {
       try {
-        this.PhotoModel.findOneAndDelete({ _id: req.params.idphotos, album: req.params.idalbum })
+        this.PhotoModel.findOneAndDelete({
+          _id: req.params.idphotos,
+          album: req.params.idalbum
+        })
           .then((photo) => {
-            res.status(200).json(photo || {});
+            if (photo) {
+              this.AlbumModel.findByIdAndUpdate(
+                req.params.idalbum,
+                { $pull: { photos: photo._id } }
+              ).then(() => {
+                res.status(200).json(photo);
+              });
+            } else {
+              res.status(404).json({});
+            }
           })
-          .catch(() => {
+          .catch((err) => {
             res.status(500).json({
               code: 500,
-              message: 'Internal Server error'
+              message: 'Erreur suppression',
+              error: err.message
             });
           });
       } catch (err) {
@@ -30,6 +46,7 @@ const Photos = class Photos {
       }
     });
   }
+  
 
   // GET /album/:idalbum/photo/:idphotos - Récupérer une photo spécifique d'un album
   //GOOD
@@ -56,7 +73,6 @@ const Photos = class Photos {
     });
   }
 
-  //GOOD
   create() {
     this.app.post('/album/:idalbum/photo', (req, res) => {
       try {
@@ -64,15 +80,22 @@ const Photos = class Photos {
           ...req.body,
           album: req.params.idalbum
         });
-
+  
         newPhoto.save()
           .then((photo) => {
-            res.status(201).json(photo || {});
+            this.AlbumModel.findByIdAndUpdate(
+              req.params.idalbum,
+              { $push: { photos: photo._id } },
+              { new: true }
+            ).then(() => {
+              res.status(201).json(photo || {});
+            });
           })
-          .catch(() => {
+          .catch((err) => {
             res.status(500).json({
               code: 500,
-              message: 'Internal Server error',
+              message: 'Erreur création photo',
+              error: err.message
             });
           });
       } catch (err) {
@@ -92,7 +115,7 @@ const Photos = class Photos {
         this.PhotoModel.findOneAndUpdate(
           { _id: req.params.idphotos, album: req.params.idalbum },
           req.body,
-          { new: true } // Renvoie la version mise à jour de la photo
+          { new: true }
         )
           .then((updatedPhoto) => {
             res.status(200).json(updatedPhoto || {});

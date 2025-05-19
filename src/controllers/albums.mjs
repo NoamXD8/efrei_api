@@ -1,4 +1,4 @@
-import AlbumModel from '../models/album.mjs';  // Correct, car models/album.mjs exporte un modèle déjà défini
+import AlbumModel from '../models/album.mjs';
 
 const Albums = class Albums {
   constructor(app, connect) {
@@ -10,17 +10,19 @@ const Albums = class Albums {
   showById() {
     this.app.get('/album/:id', (req, res) => {
       try {
-        this.AlbumModel.findById(req.params.id).then((album) => {
+        this.AlbumModel.findById(req.params.id)
+          .populate('photos')
+          .then((album) => {
             res.status(200).json(album || {});
-        }).catch(() => {
+          }).catch((err) => {
             res.status(500).json({
               code: 500,
-              message: 'Internal Server error'
+              message: 'Internal Server Error',
+              error: err.message
             });
           });
       } catch (err) {
-        console.error(`[ERROR] /albums/:id -> ${err}`);
-
+        console.error(`[ERROR] /album/:id -> ${err}`);
         res.status(400).json({
           code: 400,
           message: 'Bad request'
@@ -28,6 +30,7 @@ const Albums = class Albums {
       }
     });
   }
+  
 
   create() {
     this.app.post('/album/', (req, res) => {
@@ -53,7 +56,7 @@ const Albums = class Albums {
   update() {
     this.app.put('/album/:id', (req, res) => {
       try {
-        // { new: true } permet de renvoyer l'album mis à jour.
+        // { new: true } permet de renvoyer l'album mis à jour
         this.AlbumModel.findByIdAndUpdate(req.params.id, req.body, { new: true })
           .then(albumUpdated => res.status(200).json(albumUpdated || {}))
           .catch(() => {
@@ -99,15 +102,16 @@ const Albums = class Albums {
     this.app.get('/albums', (req, res) => {
       try {
         const filter = {};
-        if (req.query.name) {
-          filter.name = { $regex: req.query.name, $options: 'i' };
+        if (req.query.title) {
+          filter.title = { $regex: req.query.title, $options: 'i' };
         }
         this.AlbumModel.find(filter)
           .then(albums => res.status(200).json(albums || []))
-          .catch(() => {
+          .catch((err) => {
             res.status(500).json({
               code: 500,
-              message: 'Internal Server error'
+              message: 'Internal Server Error',
+              error: err.message
             });
           });
       } catch (err) {
@@ -119,6 +123,7 @@ const Albums = class Albums {
       }
     });
   }
+  
 
   run() {
     this.create();
