@@ -11,7 +11,7 @@ const Photos = class Photos {
   deleteById() {
     this.app.delete('/album/:idalbum/photo/:idphotos', (req, res) => {
       try {
-        this.PhotoModel.findOneAndDelete({ _id: req.params.idphotos, albumId: req.params.idalbum })
+        this.PhotoModel.findOneAndDelete({ _id: req.params.idphotos, album: req.params.idalbum })
           .then((photo) => {
             res.status(200).json(photo || {});
           })
@@ -32,10 +32,11 @@ const Photos = class Photos {
   }
 
   // GET /album/:idalbum/photo/:idphotos - Récupérer une photo spécifique d'un album
+  //GOOD
   showById() {
     this.app.get('/album/:idalbum/photo/:idphotos', (req, res) => {
       try {
-        this.PhotoModel.findOne({ _id: req.params.idphotos, albumId: req.params.idalbum })
+        this.PhotoModel.findOne({ _id: req.params.idphotos, album: req.params.idalbum })
           .then((photo) => {
             res.status(200).json(photo || {});
           })
@@ -55,23 +56,23 @@ const Photos = class Photos {
     });
   }
 
-  // POST /album/:idalbum/photo - Ajouter une nouvelle photo à un album
+  //GOOD
   create() {
     this.app.post('/album/:idalbum/photo', (req, res) => {
       try {
         const newPhoto = new this.PhotoModel({
           ...req.body,
-          albumId: req.params.idalbum
+          album: req.params.idalbum
         });
 
         newPhoto.save()
           .then((photo) => {
-            res.status(200).json(photo || {});
+            res.status(201).json(photo || {});
           })
           .catch(() => {
             res.status(500).json({
               code: 500,
-              message: 'Internal Server error'
+              message: 'Internal Server error',
             });
           });
       } catch (err) {
@@ -89,7 +90,7 @@ const Photos = class Photos {
     this.app.put('/album/:idalbum/photo/:idphotos', (req, res) => {
       try {
         this.PhotoModel.findOneAndUpdate(
-          { _id: req.params.idphotos, albumId: req.params.idalbum },
+          { _id: req.params.idphotos, album: req.params.idalbum },
           req.body,
           { new: true } // Renvoie la version mise à jour de la photo
         )
@@ -113,10 +114,11 @@ const Photos = class Photos {
   }
 
   // GET /album/:idalbum/photos - Récupérer toutes les photos d'un album
+  //GOOD
   showAllPhotos() {
     this.app.get('/album/:idalbum/photos', (req, res) => {
       try {
-        this.PhotoModel.find({ albumId: req.params.idalbum })
+        this.PhotoModel.find({ album: req.params.idalbum })
           .then((photos) => {
             res.status(200).json(photos || []);
           })
