@@ -9,11 +9,16 @@ import helmet from 'helmet';
 // Core
 import config from './config.mjs';
 import routes from './controllers/routes.mjs';
+import authenticateToken from './middlewares/authentificationToken.js';
 
 const Server = class Server {
   constructor() {
-    this.app = express();
+    this._app = express();
     this.config = config[process.argv[2]] || config.development;
+  }
+
+  get app() {
+    return this._app;
   }
 
   async dbConnect() {
@@ -69,9 +74,25 @@ const Server = class Server {
   }
 
   routes() {
-    //new routes.Users(this.app, this.connect);
+    new routes.Auth(this.app, this.config); 
     new routes.Albums(this.app, this.connect);
     new routes.Photos(this.app, this.connect);
+
+      // ✅ Route protégée ici
+    this.app.get('/protected', authenticateToken, (req, res) => {
+      res.status(200).json({
+        message: 'Bienvenue ! Tu es authentifié.',
+        user: req.user
+      });
+    });
+
+  // Middleware 404
+    this.app.use((req, res) => {
+      res.status(404).json({
+        code: 404,
+        message: 'Not Found'
+      });
+    });
 
     this.app.use((req, res) => {
       res.status(404).json({
