@@ -74,6 +74,7 @@ const Server = class Server {
   }
 
   routes() {
+    new routes.Pipeline(this.app);
     new routes.Auth(this.app, this.config); 
     new routes.Albums(this.app, this.connect);
     new routes.Photos(this.app, this.connect);
